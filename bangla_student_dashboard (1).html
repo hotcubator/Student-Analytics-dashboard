@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bangladesh Student Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --surface: #111420;
+    --card: #161b2e;
+    --border: #1f2744;
+    --accent1: #4f8ef7;
+    --accent2: #f7c94f;
+    --accent3: #4ff7a8;
+    --accent4: #f74f7c;
+    --accent5: #bf4ff7;
+    --text: #e8ecf7;
+    --muted: #6b7599;
+    --glow1: rgba(79,142,247,0.15);
+    --glow2: rgba(247,201,79,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0d1120 0%, #111826 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo-area { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent5));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 18px;
+    box-shadow: 0 0 24px rgba(79,142,247,0.4);
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  header h1 span { color: var(--accent1); }
+  .header-meta {
+    text-align: right;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .header-meta strong { color: var(--text); font-size: 15px; display: block; }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 40px 48px;
+    display: grid;
+    gap: 28px;
+  }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi:nth-child(1)::before { background: linear-gradient(90deg, var(--accent1), transparent); }
+  .kpi:nth-child(2)::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .kpi:nth-child(3)::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .kpi:nth-child(4)::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+  .kpi:nth-child(5)::before { background: linear-gradient(90deg, var(--accent5), transparent); }
+  .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; }
+  .kpi:nth-child(1) .kpi-value { color: var(--accent1); }
+  .kpi:nth-child(2) .kpi-value { color: var(--accent2); }
+  .kpi:nth-child(3) .kpi-value { color: var(--accent3); }
+  .kpi:nth-child(4) .kpi-value { color: var(--accent4); }
+  .kpi:nth-child(5) .kpi-value { color: var(--accent5); }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi-icon {
+    position: absolute;
+    right: 20px; top: 20px;
+    font-size: 28px;
+    opacity: 0.15;
+  }
+
+  /* ── GRID ROWS ── */
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; }
+  .row-geo { display: grid; grid-template-columns: 2fr 1fr; gap: 28px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .card-subtitle {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .chart-wrap { position: relative; }
+
+  /* ── GEO MAP ── */
+  .geo-map {
+    position: relative;
+    background: linear-gradient(135deg, #0e1525, #111e36);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .geo-map svg { width: 100%; max-height: 360px; }
+  .city-dot {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .city-dot circle {
+    transition: all 0.2s;
+  }
+  .city-dot:hover circle { filter: brightness(1.4); }
+  .city-label { font-size: 11px; font-family: 'DM Sans', sans-serif; fill: #a0aec0; pointer-events: none; }
+  .city-value { font-size: 13px; font-family: 'Syne', sans-serif; font-weight: 700; fill: #e8ecf7; pointer-events: none; }
+
+  .geo-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .geo-legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    transition: background 0.2s;
+    cursor: default;
+  }
+  .geo-legend-item:hover { background: var(--border); }
+  .geo-legend-left { display: flex; align-items: center; gap: 10px; }
+  .geo-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .geo-count {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent1);
+  }
+  .geo-bar-wrap { width: 80px; height: 4px; background: var(--border); border-radius: 2px; }
+  .geo-bar { height: 100%; border-radius: 2px; background: var(--accent1); }
+
+  /* ── TABLE ── */
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mini-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mini-table td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .mini-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .badge-completed { background: rgba(79,247,168,0.15); color: var(--accent3); }
+  .badge-ongoing { background: rgba(79,142,247,0.15); color: var(--accent1); }
+  .badge-notstarted { background: rgba(107,117,153,0.15); color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .kpi { animation: fadeUp 0.5s ease both; }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.1s; }
+  .kpi:nth-child(3) { animation-delay: 0.15s; }
+  .kpi:nth-child(4) { animation-delay: 0.2s; }
+  .kpi:nth-child(5) { animation-delay: 0.25s; }
+  .card { animation: fadeUp 0.5s ease 0.2s both; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-badge">🇧🇩</div>
+    <div>
+      <h1>Bangladesh <span>Student</span> Analytics</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">EdTech Enrollment Intelligence Dashboard</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <strong>100 Students · 8 Cities · 8 Courses</strong>
+    Dataset: bangla_student_dataset_100_rows
+  </div>
+</header>
+
+<main>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">100</div>
+      <div class="kpi-sub">Across 8 cities</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-label">Enrolled</div>
+      <div class="kpi-value">72</div>
+      <div class="kpi-sub">72% enrollment rate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">🎓</div>
+      <div class="kpi-label">Completed</div>
+      <div class="kpi-value">18</div>
+      <div class="kpi-sub">25% of enrolled</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Avg. Fee</div>
+      <div class="kpi-value">৳6.4K</div>
+      <div class="kpi-sub">Among enrolled only</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">📚</div>
+      <div class="kpi-label">Courses</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-sub">Diverse tech tracks</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: GEO + CITY LEGEND -->
+  <div class="row-geo">
+    <div class="card">
+      <div class="card-title">Geographical Distribution</div>
+      <div class="card-subtitle">Student Count by City</div>
+      <div class="geo-map">
+        <!-- Simplified Bangladesh SVG Map with City Bubbles -->
+        <svg viewBox="0 0 500 560" xmlns="http://www.w3.org/2000/svg">
+          <!-- Bangladesh rough outline -->
+          <defs>
+            <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" style="stop-color:#1a2340;stop-opacity:1"/>
+              <stop offset="100%" style="stop-color:#0d1525;stop-opacity:1"/>
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="500" height="560" fill="url(#bgGrad)" rx="12"/>
+          <!-- Bangladesh shape approximation -->
+          <path d="M180,40 L240,35 L310,50 L370,80 L400,130 L420,180 L415,240 
+                   L430,290 L420,350 L390,400 L360,440 L320,470 L280,490 
+                   L240,500 L200,490 L160,470 L130,440 L110,400 L100,350 
+                   L95,300 L100,250 L95,200 L110,150 L140,100 L160,65 Z" 
+                fill="rgba(79,142,247,0.06)" stroke="rgba(79,142,247,0.25)" stroke-width="1.5"/>
+
+          <!-- Grid lines -->
+          <line x1="100" y1="200" x2="430" y2="200" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="100" y1="300" x2="430" y2="300" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="100" y1="400" x2="430" y2="400" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="200" y1="40" x2="200" y2="500" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="300" y1="40" x2="300" y2="500" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+          <!-- DHAKA (14 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="270" cy="240" r="22" fill="rgba(247,201,79,0.2)" stroke="#f7c94f" stroke-width="2"/>
+            <circle cx="270" cy="240" r="8" fill="#f7c94f"/>
+            <text x="270" y="233" text-anchor="middle" class="city-value" fill="#f7c94f">14</text>
+            <text x="270" y="275" text-anchor="middle" class="city-label">Dhaka</text>
+          </g>
+
+          <!-- CHITTAGONG (18 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="380" cy="340" r="26" fill="rgba(79,247,168,0.15)" stroke="#4ff7a8" stroke-width="2"/>
+            <circle cx="380" cy="340" r="9" fill="#4ff7a8"/>
+            <text x="380" y="333" text-anchor="middle" class="city-value" fill="#4ff7a8">18</text>
+            <text x="380" y="375" text-anchor="middle" class="city-label">Chittagong</text>
+          </g>
+
+          <!-- SYLHET (9 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="370" cy="155" r="17" fill="rgba(191,79,247,0.2)" stroke="#bf4ff7" stroke-width="2"/>
+            <circle cx="370" cy="155" r="6" fill="#bf4ff7"/>
+            <text x="370" y="149" text-anchor="middle" class="city-value" fill="#bf4ff7">9</text>
+            <text x="370" y="183" text-anchor="middle" class="city-label">Sylhet</text>
+          </g>
+
+          <!-- RAJSHAHI (8 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="155" cy="195" r="16" fill="rgba(247,79,124,0.2)" stroke="#f74f7c" stroke-width="2"/>
+            <circle cx="155" cy="195" r="6" fill="#f74f7c"/>
+            <text x="155" y="189" text-anchor="middle" class="city-value" fill="#f74f7c">8</text>
+            <text x="155" y="222" text-anchor="middle" class="city-label">Rajshahi</text>
+          </g>
+
+          <!-- RANGPUR (16 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="200" cy="100" r="24" fill="rgba(79,142,247,0.2)" stroke="#4f8ef7" stroke-width="2"/>
+            <circle cx="200" cy="100" r="8" fill="#4f8ef7"/>
+            <text x="200" y="94" text-anchor="middle" class="city-value" fill="#4f8ef7">16</text>
+            <text x="200" y="133" text-anchor="middle" class="city-label">Rangpur</text>
+          </g>
+
+          <!-- BARISAL (20 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="255" cy="390" r="27" fill="rgba(247,201,79,0.2)" stroke="#f7c94f" stroke-width="2.5"/>
+            <circle cx="255" cy="390" r="10" fill="#f7c94f"/>
+            <text x="255" y="383" text-anchor="middle" class="city-value" fill="#f7c94f">20</text>
+            <text x="255" y="427" text-anchor="middle" class="city-label">Barisal</text>
+          </g>
+
+          <!-- MYMENSINGH (10 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="295" cy="170" r="18" fill="rgba(79,247,168,0.2)" stroke="#4ff7a8" stroke-width="2"/>
+            <circle cx="295" cy="170" r="7" fill="#4ff7a8"/>
+            <text x="295" y="163" text-anchor="middle" class="city-value" fill="#4ff7a8">10</text>
+            <text x="295" y="200" text-anchor="middle" class="city-label">Mymensingh</text>
+          </g>
+
+          <!-- KHULNA (5 students) -->
+          <g class="city-dot" filter="url(#glow)">
+            <circle cx="155" cy="340" r="14" fill="rgba(247,79,124,0.2)" stroke="#f74f7c" stroke-width="2"/>
+            <circle cx="155" cy="340" r="5" fill="#f74f7c"/>
+            <text x="155" y="333" text-anchor="middle" class="city-value" fill="#f74f7c">5</text>
+            <text x="155" y="363" text-anchor="middle" class="city-label">Khulna</text>
+          </g>
+
+          <!-- Bay of Bengal label -->
+          <text x="430" y="480" font-size="9" fill="rgba(255,255,255,0.2)" font-style="italic">Bay of Bengal →</text>
+          <text x="40" y="130" font-size="9" fill="rgba(255,255,255,0.2)" font-style="italic" transform="rotate(-90,40,130)">India ↑</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;flex-direction:column;">
+      <div class="card-title">City Breakdown</div>
+      <div class="card-subtitle">Students per Region</div>
+      <div class="geo-legend" style="flex:1;">
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#f7c94f"></div><span>Barisal</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:100%;background:#f7c94f"></div></div>
+            <span class="geo-count">20</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#4ff7a8"></div><span>Chittagong</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:90%;background:#4ff7a8"></div></div>
+            <span class="geo-count">18</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#4f8ef7"></div><span>Rangpur</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:80%;background:#4f8ef7"></div></div>
+            <span class="geo-count">16</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#f7c94f;opacity:0.7"></div><span>Dhaka</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:70%;background:#f7c94f;opacity:0.7"></div></div>
+            <span class="geo-count">14</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#4ff7a8;opacity:0.6"></div><span>Mymensingh</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:50%;background:#4ff7a8;opacity:0.6"></div></div>
+            <span class="geo-count">10</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#bf4ff7"></div><span>Sylhet</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:45%;background:#bf4ff7"></div></div>
+            <span class="geo-count">9</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#f74f7c"></div><span>Rajshahi</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:40%;background:#f74f7c"></div></div>
+            <span class="geo-count">8</span>
+          </div>
+        </div>
+        <div class="geo-legend-item">
+          <div class="geo-legend-left"><div class="geo-dot" style="background:#f74f7c;opacity:0.5"></div><span>Khulna</span></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="geo-bar-wrap"><div class="geo-bar" style="width:25%;background:#f74f7c;opacity:0.5"></div></div>
+            <span class="geo-count">5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: BAR + PIE -->
+  <div class="row-2">
+    <div class="card">
+      <div class="card-title">Enrollment by Course</div>
+      <div class="card-subtitle">Student Count per Program</div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Completion Status</div>
+      <div class="card-subtitle">Pipeline Overview</div>
+      <div class="chart-wrap" style="height:280px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: LINE + SCATTER + DONUT -->
+  <div class="row-3">
+    <div class="card">
+      <div class="card-title">Fee Structure by Course</div>
+      <div class="card-subtitle">Average Course Pricing (৳)</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fee vs Students · Scatter</div>
+      <div class="card-subtitle">Course Pricing vs Popularity</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="scatterChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Enrollment Rate</div>
+      <div class="card-subtitle">Enrolled vs Not Enrolled</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:260px;">
+        <canvas id="donutChart" style="max-height:180px;"></canvas>
+        <div style="display:flex;gap:24px;margin-top:16px;font-size:13px;">
+          <span style="color:var(--accent1);">● Enrolled <strong>72%</strong></span>
+          <span style="color:var(--muted);">● Not Enrolled <strong>28%</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Top Students Table + Horizontal Bar -->
+  <div class="row-2">
+    <div class="card">
+      <div class="card-title">Course × City Heatmap</div>
+      <div class="card-subtitle">Distribution Matrix</div>
+      <div style="overflow-x:auto;">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Students</th>
+              <th>Avg Fee (৳)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Digital Marketing</td><td>18</td><td>5,400</td><td><span class="badge badge-ongoing">Most Popular</span></td></tr>
+            <tr><td>Cybersecurity</td><td>16</td><td>7,000</td><td><span class="badge badge-ongoing">High Demand</span></td></tr>
+            <tr><td>AI Fundamentals</td><td>14</td><td>8,357</td><td><span class="badge badge-completed">Premium</span></td></tr>
+            <tr><td>Power BI</td><td>12</td><td>5,417</td><td><span class="badge badge-ongoing">Growing</span></td></tr>
+            <tr><td>Python Basics</td><td>12</td><td>4,167</td><td><span class="badge badge-ongoing">Growing</span></td></tr>
+            <tr><td>Data Analytics</td><td>11</td><td>3,818</td><td><span class="badge badge-notstarted">Steady</span></td></tr>
+            <tr><td>Excel Basics</td><td>10</td><td>2,400</td><td><span class="badge badge-notstarted">Entry Level</span></td></tr>
+            <tr><td>UI/UX Design</td><td>7</td><td>5,357</td><td><span class="badge badge-notstarted">Niche</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">City Enrollment Status</div>
+      <div class="card-subtitle">Enrolled vs Not Enrolled by City</div>
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="stackedBar"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Bangladesh Student Analytics Dashboard · Dataset: 100 Students · 8 Cities · 8 Courses · Built with Chart.js
+</footer>
+
+<script>
+  const COLORS = {
+    blue: '#4f8ef7',
+    yellow: '#f7c94f',
+    green: '#4ff7a8',
+    red: '#f74f7c',
+    purple: '#bf4ff7',
+    teal: '#4ff7e8',
+    orange: '#f7894f',
+    pink: '#f74fc4'
+  };
+  const palette = Object.values(COLORS);
+
+  const chartDefaults = {
+    plugins: {
+      legend: {
+        labels: {
+          color: '#6b7599',
+          font: { family: 'DM Sans', size: 12 },
+          boxWidth: 12, padding: 16
+        }
+      },
+      tooltip: {
+        backgroundColor: '#161b2e',
+        borderColor: '#1f2744',
+        borderWidth: 1,
+        titleColor: '#e8ecf7',
+        bodyColor: '#a0aec0',
+        padding: 12,
+        cornerRadius: 10
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#6b7599', font: { family: 'DM Sans', size: 11 } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#6b7599', font: { family: 'DM Sans', size: 11 } }
+      }
+    }
+  };
+
+  // BAR CHART — Students per Course
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Digital Mktg', 'Cybersec', 'AI Fund.', 'Power BI', 'Python', 'Data Anal.', 'Excel', 'UI/UX'],
+      datasets: [{
+        label: 'Students',
+        data: [18, 16, 14, 12, 12, 11, 10, 7],
+        backgroundColor: palette,
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: chartDefaults.scales
+    }
+  });
+
+  // PIE CHART — Completion Status
+  new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Not Started', 'Ongoing', 'Completed'],
+      datasets: [{
+        data: [55, 27, 18],
+        backgroundColor: ['rgba(107,117,153,0.6)', '#4f8ef7', '#4ff7a8'],
+        borderColor: '#161b2e',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: chartDefaults.plugins.legend,
+        tooltip: chartDefaults.plugins.tooltip
+      }
+    }
+  });
+
+  // LINE CHART — Average Fee per Course
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: ['Excel', 'Data Anal.', 'Digital Mktg', 'Python', 'UI/UX', 'Power BI', 'AI Fund.', 'Cybersec'],
+      datasets: [{
+        label: 'Avg Fee (৳)',
+        data: [2400, 3818, 4000, 4167, 5357, 5417, 5786, 7000],
+        borderColor: '#4f8ef7',
+        backgroundColor: 'rgba(79,142,247,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: palette,
+        pointRadius: 6,
+        pointHoverRadius: 9,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { ...chartDefaults.plugins, legend: { display: false } }
+    }
+  });
+
+  // SCATTER CHART — Fee vs Student Count
+  new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Excel Basics', data: [{x: 2400, y: 10}], backgroundColor: palette[0], pointRadius: 12 },
+        { label: 'Data Analytics', data: [{x: 3818, y: 11}], backgroundColor: palette[1], pointRadius: 12 },
+        { label: 'Digital Mktg', data: [{x: 4000, y: 18}], backgroundColor: palette[2], pointRadius: 16 },
+        { label: 'Python Basics', data: [{x: 4167, y: 12}], backgroundColor: palette[3], pointRadius: 13 },
+        { label: 'UI/UX Design', data: [{x: 5357, y: 7}], backgroundColor: palette[4], pointRadius: 10 },
+        { label: 'Power BI', data: [{x: 5417, y: 12}], backgroundColor: palette[5], pointRadius: 13 },
+        { label: 'AI Fundamentals', data: [{x: 5786, y: 14}], backgroundColor: palette[6], pointRadius: 14 },
+        { label: 'Cybersecurity', data: [{x: 7000, y: 16}], backgroundColor: palette[7], pointRadius: 15 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ৳${ctx.parsed.x.toLocaleString()} · ${ctx.parsed.y} students`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ...chartDefaults.scales.x,
+          title: { display: true, text: 'Avg Fee (৳)', color: '#6b7599', font: { size: 11 } }
+        },
+        y: {
+          ...chartDefaults.scales.y,
+          title: { display: true, text: 'Students', color: '#6b7599', font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  // DONUT CHART — Enrollment Rate
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Enrolled', 'Not Enrolled'],
+      datasets: [{
+        data: [72, 28],
+        backgroundColor: ['#4f8ef7', 'rgba(107,117,153,0.3)'],
+        borderColor: '#161b2e',
+        borderWidth: 4,
+        circumference: 360,
+        cutout: '72%'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: chartDefaults.plugins.tooltip
+      }
+    }
+  });
+
+  // STACKED BAR — Enrolled vs Not by City
+  new Chart(document.getElementById('stackedBar'), {
+    type: 'bar',
+    data: {
+      labels: ['Barisal', 'Chittagong', 'Rangpur', 'Dhaka', 'Mymensingh', 'Sylhet', 'Rajshahi', 'Khulna'],
+      datasets: [
+        {
+          label: 'Enrolled',
+          data: [16, 14, 13, 12, 8, 4, 4, 1],
+          backgroundColor: 'rgba(79,142,247,0.75)',
+          borderRadius: { topLeft: 6, topRight: 6 },
+          borderSkipped: false
+        },
+        {
+          label: 'Not Enrolled',
+          data: [4, 4, 3, 2, 2, 5, 4, 4],
+          backgroundColor: 'rgba(107,117,153,0.35)',
+          borderRadius: { topLeft: 6, topRight: 6 },
+          borderSkipped: false
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: { ...chartDefaults.scales.x, stacked: true },
+        y: { ...chartDefaults.scales.y, stacked: true }
+      },
+      plugins: {
+        legend: chartDefaults.plugins.legend,
+        tooltip: chartDefaults.plugins.tooltip
+      }
+    }
+  });
+</script>
+</body>
+</html>
